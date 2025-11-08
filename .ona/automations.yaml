@@ -1,0 +1,112 @@
+# Ona Cloud Automation Configuration for CodeAssist
+# This file configures the development environment for running CodeAssist
+
+version: "1.0"
+
+# Environment setup tasks
+tasks:
+  # Initial setup task - runs on first workspace creation
+  - name: setup-environment
+    description: "Install dependencies and setup Docker environment"
+    run: |
+      echo "🚀 Setting up CodeAssist environment..."
+      
+      # Install UV package manager
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      export PATH="$HOME/.cargo/bin:$PATH"
+      
+      # Verify Docker is available
+      docker --version || echo "⚠️  Docker not available"
+      
+      # Install Docker Compose if needed
+      if ! command -v docker-compose &> /dev/null; then
+        echo "Installing Docker Compose..."
+        sudo apt-get update
+        sudo apt-get install -y docker-compose
+      fi
+      
+      # Create persistent data directory
+      mkdir -p persistent-data
+      
+      # Sync Python dependencies
+      uv sync || echo "Dependencies will be installed when running the project"
+      
+      echo "✅ Environment setup complete!"
+      echo ""
+      echo "════════════════════════════════════════════"
+      echo "  CodeAssist is ready on Ona Cloud!"
+      echo "════════════════════════════════════════════"
+      echo ""
+      echo "Next steps:"
+      echo "1. Set your HuggingFace token in Ona Secrets:"
+      echo "   Name: HF_TOKEN"
+      echo "   Value: your_token_from_huggingface"
+      echo ""
+      echo "2. Start CodeAssist:"
+      echo "   uv run run.py"
+      echo ""
+      echo "3. Access the Web UI on port 3000"
+      echo "════════════════════════════════════════════"
+
+  # Optional: Quick start task
+  - name: start-codeassist
+    description: "Start CodeAssist services"
+    run: |
+      export PATH="$HOME/.cargo/bin:$PATH"
+      
+      # Check if HF_TOKEN is set
+      if [ -z "$HF_TOKEN" ]; then
+        echo "⚠️  WARNING: HF_TOKEN not set!"
+        echo "Please add it in Ona Cloud Secrets before starting."
+        echo ""
+        read -p "Do you want to continue anyway? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+          exit 1
+        fi
+      fi
+      
+      echo "🚀 Starting CodeAssist..."
+      uv run run.py
+
+# Port forwarding configuration
+ports:
+  - port: 3000
+    name: "Web UI"
+    description: "CodeAssist Web Interface"
+    public: true
+    
+  - port: 8000
+    name: "State Service"
+    description: "State Service API"
+    public: false
+    
+  - port: 8001
+    name: "Policy Models"
+    description: "Policy Models API"
+    public: false
+    
+  - port: 8008
+    name: "Solution Tester"
+    description: "Solution Tester API"
+    public: false
+    
+  - port: 11434
+    name: "Ollama"
+    description: "Ollama LLM Server"
+    public: false
+
+# Environment variables (placeholders - actual secrets should be in Ona Secrets)
+environment:
+  PYTHONUNBUFFERED: "1"
+  # HF_TOKEN should be set in Ona Cloud Secrets UI
+  # OLLAMA_BASE_URL will be set by run.py
+
+# VSCode extensions to install (if Ona supports)
+extensions:
+  - ms-python.python
+  - ms-python.vscode-pylance
+  - ms-azuretools.vscode-docker
+
+# Recommended instance size
+# Use "Regular" (4 vCPU / 16 GiB) for best performance
