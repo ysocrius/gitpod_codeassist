@@ -1,0 +1,83 @@
+# Gitpod configuration for CodeAssist
+# This sets up the environment for running CodeAssist with Docker support
+
+# Define the Docker image to use (with Docker pre-installed)
+image: gitpod/workspace-full
+
+# Tasks to run on workspace startup
+tasks:
+  - name: Setup Environment
+    init: |
+      # Install UV package manager
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      source $HOME/.cargo/env
+      
+      # Install Python dependencies
+      uv sync || echo "UV sync will run when you execute run.py"
+      
+      # Setup persistent data directory
+      mkdir -p persistent-data
+      
+      # Install Docker Compose
+      sudo apt-get update
+      sudo apt-get install -y docker-compose
+      
+      echo "✅ Environment setup complete!"
+      echo "📝 Remember to set your HF_TOKEN environment variable"
+      echo "🚀 Run 'uv run run.py' to start CodeAssist"
+    
+    command: |
+      # Show instructions
+      gp sync-done setup
+      echo ""
+      echo "════════════════════════════════════════════"
+      echo "  CodeAssist is ready!"
+      echo "════════════════════════════════════════════"
+      echo ""
+      echo "Before starting, set your HuggingFace token:"
+      echo "  export HF_TOKEN='your_token_here'"
+      echo ""
+      echo "Then run:"
+      echo "  uv run run.py"
+      echo ""
+      echo "The web UI will be available on port 3000"
+      echo "════════════════════════════════════════════"
+
+# Ports to expose
+ports:
+  - port: 3000
+    name: Web UI
+    description: CodeAssist Web Interface
+    onOpen: notify
+  - port: 8000
+    name: State Service
+    description: State Service API
+    onOpen: ignore
+  - port: 8001
+    name: Policy Models
+    description: Policy Models API
+    onOpen: ignore
+  - port: 8008
+    name: Solution Tester
+    description: Solution Tester API
+    onOpen: ignore
+  - port: 11434
+    name: Ollama
+    description: Ollama LLM Server
+    onOpen: ignore
+
+# VSCode extensions to install
+vscode:
+  extensions:
+    - ms-python.python
+    - ms-python.vscode-pylance
+    - ms-azuretools.vscode-docker
+    - GitHub.copilot # Optional but helpful
+
+# GitHub prebuilds (speeds up workspace creation)
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
+    pullRequestsFromForks: false
